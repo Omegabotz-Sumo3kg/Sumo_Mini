@@ -1,38 +1,39 @@
-#include <vl53l0x.h>
-#include <IRRemote.h>
+#include <Wire.h>
+#include "Adafruit_VL53L0X.h"
 
-// Por agora isso é uma cópia barata do código do sumozão. Não sei por onde continuar.
+#define MIN_RANGE 30
+#define MAX_RANGE 770
 
-// Definições de constantes e enums
+Adafruit_VL53L0X sensor = Adafruit_VL53L0X();
 
-#define IRRECEIVERPIN 23
-
-IRrecv irrecv(irReceiverPin);
-
-//Presence Sensor Pins and Variables on the board
-#define INFRASENSOR_RIGHT 5 //17 5
-#define INFRASENSOR_LEFT 19 //23 22 
-#define INFRASENSOR_MID 18
-#define INFRASENSOR_LEFT_REF 99 //INSERIR O NUMERO NO ESP
-#define INFRASENSOR_RIGHT_REF 98 //INSERIR O NUMERO NO ESP
-
-enum States {
-  READY, RUNNING, STOP
-}
-
-enum Tactics {
-  MOVIMENTACAO, RADAR, INV_RADAR, SUICIDE
-}
-
-// definição de globais
-
-States state = STOP;
+void sensorRead();
 
 void setup() {
-  // put your setup code here, to run once:
+  Serial.begin(115200);
+  while (!Serial) {
+    delay(1);
+  }
+  if (!sensor.begin()) {
+    Serial.println(F("Failed to boot VL53L0X"));
+    while (1)
+      ;
+  }
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  sensorRead();
+}
 
+void sensorRead(){
+  VL53L0X_RangingMeasurementData_t measure;
+  sensor.rangingTest(&measure, false);
+  if (measure.RangeMilliMeter > MIN_RANGE && measure.RangeMilliMeter < MAX_RANGE && measure.RangeStatus != 4){
+    Serial.println("Detectado dentro do range");
+    Serial.println(measure.RangeMilliMeter);
+  }
+  else{
+    Serial.println("Fora do range");
+  }
+  delay(100);
 }
