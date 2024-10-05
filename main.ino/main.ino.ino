@@ -1,8 +1,22 @@
+/*
+  Ωmegabotz
+
+  Teste de Range Sensor VL53L0X V2
+
+  Info:
+    Range min.: 30mm
+    Range máx.: 1250mm
+
+  Default I2C Address: 0x29
+  Necessário alteração do endereço para utilização de mais de um sensor!
+  Ref. Alterar Endereço: https://www.youtube.com/watch?v=RRQASevYK3g
+*/
+
 #include <Wire.h>
 #include "Adafruit_VL53L0X.h"
 
-#define MIN_RANGE 30
-#define MAX_RANGE 770
+#define MIN_RANGE 30  // Leitura Min.       [mm]
+#define MAX_RANGE 770 // Diâmetro do Dojô   [mm]
 
 Adafruit_VL53L0X sensor = Adafruit_VL53L0X();
 
@@ -15,13 +29,11 @@ void setup() {
   }
   if (!sensor.begin()) {
     Serial.println(F("Failed to boot VL53L0X"));
-    while (1)
-      ;
+    while (1);
   }
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   sensorRead();
 }
 
@@ -32,8 +44,7 @@ void sensorRead(){
     Serial.println("Detectado dentro do range");
     Serial.println(measure.RangeMilliMeter);
   }
-  else{
-    Serial.println("Fora do range");
-  }
+  else Serial.println("Fora do range");
+  
   delay(100);
 }
