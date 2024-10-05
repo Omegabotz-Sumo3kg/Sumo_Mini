@@ -9,7 +9,9 @@
 
   Default I2C Address: 0x29
   Necessário alteração do endereço para utilização de mais de um sensor!
-  Ref. Alterar Endereço: https://www.youtube.com/watch?v=RRQASevYK3g
+  Ref. Alterar Endereço:
+  > https://www.youtube.com/watch?v=RRQASevYK3g
+  > https://learn.adafruit.com/adafruit-vl53l0x-micro-lidar-distance-sensor-breakout/arduino-code
 */
 
 #include <Wire.h>
