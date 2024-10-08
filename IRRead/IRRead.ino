@@ -1,4 +1,4 @@
-void IRRead() {
+void IRRead() { // copiado
   String value;
 
   if (irrecv.decode(&results)) {

@@ -26,7 +26,7 @@ VL53L0X_RangingMeasurementData_t m_right;  // Measure Right Sensor
 /*  Função readSensor retorna 1 quando detectar um objeto.
     Usar dentro de lógicas como:
     > if(readSensor('c')){...} */
-bool readSensor(char pos) {
+bool readSensor(char pos) { // copiado
   swtich(pos) {
     case 'c':
       s_center.rangingTest(&m_center, false);
@@ -54,7 +54,7 @@ bool readSensor(char pos) {
 
 /* A função startVLs deve estar em void setup()
   logo após de Serial.begin() e Wire.begin() */
-void startVLs() {
+void startVLs() { // copiado
   pinMode(XSHUT_center, OUTPUT);
   pinMode(XSHUT_left, OUTPUT);
   pinMode(XSHUT_right, OUTPUT);

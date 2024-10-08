@@ -73,6 +73,9 @@ enum Teclas = {
 Estados estado = LOCKED;
 Estrategias estrategia = RADAR;
 Teclas tecla = NONE;
+bool direita = true;
+bool desempate = false;
+bool opcaoApertado = false;
 
 /* ===================================
  * Componentes
@@ -92,11 +95,11 @@ Servo MotorEsquerdo;
 
 // Protótipos de função
 void IRRead();
-void sensorTest();
-bool readSensor(char pos);
+//void sensorTest();
+bool readSensor(char pos); // copiado
 void MotorWrite(int valorEsquerdo, int valorDireito);
-void statusVerify();
-void StartVLs();
+void StatusVerify();
+void StartVLs(); // copiado
 void Auto();
 
 void setup() {
@@ -104,11 +107,7 @@ void setup() {
   while (!Serial) {
     delay(1);
   }
-  if (!Sensor.begin()) {
-    Serial.println(F("Falhou no boot do sensor VL53L0X"));
-    while (1)
-      ;
-  }
+  StartVLs();
   MotorEsquerdo.attach(PIN_MOTORESQ);
   MotorDireito.attach(PIN_MOTORDIR);
   MotorEsquerdo.write(90);
@@ -120,8 +119,6 @@ void loop() {
   sensorRead();
 }
 
-// Refacção? de statusVerify?
-
 void IRRead(){
   String value;
 
@@ -132,33 +129,27 @@ void IRRead(){
     irrecv.resume();
   }
   if (value == "10") { // Apertou 1 no controle
-    //if (value == "Ps4.up") {
     PS4.setLed(0, 0, 0);
     PS4.sendToController();
     delay(100);
     PS4.setLed(0, 100, 100);
     PS4.sendToController();
 
-    if (autoState == STOPPED) {
-      //Serial.println("ReadyToGo");
-      autoState = READY;
+    if (estado == LOCKED) {
+      estado = STANDBY;
       PS4.setLed(0, 100, 100);
       PS4.sendToController();
       MotorWrite(90, 90);
-      //CalibrateSensors();
     }
   } else if (value == "810") { // Apertou 2 no controle
-    //} else if (value == "Ps4.left") {
-    if (autoState == READY) {
-      autoState = RUNNING;
+    if (estado == STANDBY) {
+      estado = FIGHTING;
       PS4.setLed(0, 100, 0);
       PS4.sendToController();
     }
   } else if (value == "410") {
-    //} else if ( value == "Ps4.right") {
-    if (autoState == RUNNING || autoState == READY) {
-      //Serial.println("STOP");
-      autoState = STOPPED;
+    if (estado == FIGHTING || estado == STANDBY) {
+      estado = LOCKED;
       PS4.setLed(100, 100, 0);
       PS4.sendToController();
       MotorWrite(90, 90);
@@ -166,12 +157,12 @@ void IRRead(){
   }
 }
 
-void sensorTest(){
+/*void sensorTest(){
   Sensor.rangingTest(&measure, false);
   if (measure.RangeStatus != 4){
     Serial.println("Sensor funcionando")
   }
-}
+}*/
 
 /*void sensorRead(){ 
   Sensor.rangingTest(&measure, false);
@@ -260,30 +251,21 @@ void startVLs() {
   }
 }
 
-void Status_Verify() {
-  if (PS4.Options()) {
-    if (!optionPressed) {
-      optionPressed = true;
-      if (robotState == LOCKED) {
-        robotState = AUTO;
+// Acredito que o intuito deve ser somente mudar entre standby ou locked já que não existe mais manual
+void StatusVerify(){
+  if (PS4.Options()){
+    if (!opcaoApertado){
+      opcaoApertado = !opcaoApertado;
+      if (estado == LOCKED){
+        estado == STANDBY;
         PS4.setLed(0, 100, 0);
         PS4.sendToController();
         MotorEsquerdo.write(90);
         MotorDireito.write(90);
-        Serial.println("AUTO");
-
-      } else if (robotState == AUTO) {
-        robotState = MANUAL;
-        PS4.setLed(0, 0, 100);
-        PS4.sendToController();
-        MotorEsquerdo.write(90);
-        MotorDireito.write(90);
-        autoState = STOPPED;
-        Serial.println("MANUAL");
-
-      } else if (robotState == MANUAL) {
-        robotState = LOCKED;
-        autoState = STOPPED;
+        Serial.println("STANDBY");
+      }
+      else if (estado == STANDBY){
+        estado == LOCKED;
         PS4.setLed(100, 0, 0);
         PS4.sendToController();
         MotorEsquerdo.write(90);
@@ -291,16 +273,14 @@ void Status_Verify() {
         Serial.println("LOCKED");
       }
     }
-  } else optionPressed = false;
-
-  if (robotState == MANUAL) ManualControl();
-  else if (robotState == AUTO) Auto();
+  } else opcaoApertado = !opcaoApertado;
+  Auto();
 }
 
 void Auto() {
   IRRead();
 
-  if (autoState == READY) {
+  if (estado == STANDBY) {
     if (PS4.Square()) {
       t_press = millis();
       bt_press_f = true;
@@ -360,7 +340,7 @@ void Auto() {
     }
   }
 
-  if (autoState == RUNNING) {
+  if (estado == FIGHTING) {
     if (tatic == SUICIDIO) Suicidio();
     else if (tatic == MOVIMENTACAO) Movimentacao();
     else if (tatic == RADAR) Radar();
@@ -368,7 +348,7 @@ void Auto() {
     else if (tatic == DESVIAR) Desviar();
     else if (tatic == DESVIAR_COM_SENSOR) DesviarComSensor();
     // Verify leds controll
-  } else if (autoState == READY) {  // Quando estiver no estado de espera, piscar led verde
+  } else if (estado == STANDBY) {  // Quando estiver no estado de espera, piscar led verde
     MotorWrite(90, 90);
     if (blinkTimer < millis()) {
       if (ledOn) {
@@ -381,7 +361,7 @@ void Auto() {
       ledOn = !ledOn;
       blinkTimer = millis() + 200;
     }
-  } else if (autoState == STOPPED) {  // Quando estiver no estado para, aumentar e diminuir intensidade do led verde
+  } else if (estado == LOCKED) {  // Quando estiver no estado para, aumentar e diminuir intensidade do led verde
     MotorWrite(90, 90);
     if (blinkTimer < millis()) {
       if (ledOn) {
