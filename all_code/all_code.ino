@@ -116,7 +116,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  sensorRead();
+  //
 }
 
 void IRRead(){
@@ -221,7 +221,7 @@ void MotorWrite(int valorEsquerdo, int valorDireito){
 
 /* A função startVLs deve estar em void setup()
   logo após de Serial.begin() e Wire.begin() */
-void startVLs() {
+void StartVLs() {
   pinMode(XSHUT_center, OUTPUT);
   pinMode(XSHUT_left, OUTPUT);
   pinMode(XSHUT_right, OUTPUT);
