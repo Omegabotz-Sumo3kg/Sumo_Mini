@@ -28,14 +28,17 @@
  */  
 // Definições de pinos dos sensores
 
-#define XSHUT_center x  
-#define XSHUT_left y
-#define XSHUT_right z
+// XSHUT SENSORES
+#define XSHUT_center 6  
+#define XSHUT_left 7
+#define XSHUT_right 8
 
-#define address_center 41  // 0x29
-#define address_left 48    // 0x30
-#define address_right 49   // 0x31
+// ENDEREÇO SENSORES
+#define ADDRESS_CENTER 0x29  // 0x29
+#define ADDRESS_LEFT 0x30     // 0x30
+#define ADDRESS_RIGHT 0x31   // 0x31
 
+// PINO IR RECEIVER
 #define PIN_IRRECV 23
 
 #define PIN_MOTORDIR 26
@@ -56,8 +59,6 @@ enum Estrategias = {
   SUICIDIO,
   MOVIMENTACAO,
   RADAR_INVERSO,
-  DESVIAR,
-  DESVIAR_COM_SENSOR
 };
 
 enum Teclas = {
@@ -73,9 +74,16 @@ enum Teclas = {
 Estados estado = LOCKED;
 Estrategias estrategia = RADAR;
 Teclas tecla = NONE;
+
 bool direita = true;
 bool desempate = false;
 bool opcaoApertado = false;
+
+// Variáveis controle PS4
+
+unsigned long blinkTimer;
+bool ledOn = true;
+int ledIntensity;
 
 /* ===================================
  * Componentes
@@ -93,13 +101,15 @@ VL53L0X_RangingMeasurementData_t m_right;  // Measure Right Sensor
 Servo MotorDireito;
 Servo MotorEsquerdo;
 
+IRrecv irrecv(PIN_IRRECV);
+decode_results results;
+
 // Protótipos de função
+void StartVLs();
 void IRRead();
-//void sensorTest();
 bool readSensor(char pos); // copiado
 void MotorWrite(int valorEsquerdo, int valorDireito);
 void StatusVerify();
-void StartVLs(); // copiado
 void Auto();
 
 void setup() {
@@ -107,7 +117,20 @@ void setup() {
   while (!Serial) {
     delay(1);
   }
+  
+  irrecv.enableIRIn();
+
+  PS4.begin("44:1c:a8:c6:41:80");
+  while (!PS4.isConnected()) {
+    Serial.println("WatingConnection");
+    delay(250);
+  }
+  
+  PS4.setLed(100, 0, 0);
+  PS4.sendToController();
+
   StartVLs();
+  
   MotorEsquerdo.attach(PIN_MOTORESQ);
   MotorDireito.attach(PIN_MOTORDIR);
   MotorEsquerdo.write(90);
@@ -115,8 +138,38 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  //
+  if (PS4.isConnected()) {
+    Status_Verify();
+  } else {
+    MotorEsquerdo.write(90);
+    MotorDireito.write(90);
+  }
+}
+
+void StartVLs() {
+  digitalWrite(XSHUT_CENTER, LOW);
+  digitalWrite(XSHUT_LEFT, LOW);
+  digitalWrite(XSHUT_RIGHT, LOW);
+  delay(10);
+  digitalWrite(XSHUT_CENTER, HIGH);
+  digitalWrite(XSHUT_LEFT, HIGH);  
+  digitalWrite(XSHUT_RIGHT, HIGH);
+
+  if(!s_center.begin()) {
+    Serial.println(F("Failed to boot center VL53L0X"));
+    while(1);
+  }
+  delay(10);
+  if(!s_left.begin()) {
+    Serial.println(F("Failed to boot center VL53L0X"));
+    while(1);
+  }
+  delay(10);
+  if(!s_right.begin()) {
+    Serial.println(F("Failed to boot center VL53L0X"));
+    while(1);
+  }
+  delay(10);
 }
 
 void IRRead(){
@@ -157,37 +210,6 @@ void IRRead(){
   }
 }
 
-/*void sensorTest(){
-  Sensor.rangingTest(&measure, false);
-  if (measure.RangeStatus != 4){
-    Serial.println("Sensor funcionando")
-  }
-}*/
-
-/*void sensorRead(){ 
-  Sensor.rangingTest(&measure, false);
-  if (measure.RangeMilliMeter > MIN_RANGE && measure.RangeMilliMeter < MAX_RANGE){
-    Serial.println("Detectado dentro do range");
-    Serial.println(measure.RangeMilliMeter);
-  }
-  else{
-    Serial.println("Fora do range");
-  }
-  delay(100);
-}*/
-
-/*
- * Possível refatoração em readSensor (?) 
-  bool readSensor(Adafruit_VL53L0X *sensor, VL53L0X_RangingMeasurementData_t *measure){
-    sensor.rangingTest(measure, false);
-    if (*measure.RangeMilliMeter > MIN_RANGE && *measure.RangeMilliMeter < MAX_RANGE && *measure.RangeStatus != 4) return 1;
-    else return 0;  
-  }
-*/
-
-/*  Função readSensor retorna 1 quando detectar um objeto.
-    Usar dentro de lógicas como:
-    > if(readSensor('c')){...} */
 bool readSensor(char pos) {
   swtich(pos) {
     case 'c':
@@ -219,39 +241,6 @@ void MotorWrite(int valorEsquerdo, int valorDireito){
   MotorEsquerdo.write(valorEsquerdo);
 }
 
-/* A função startVLs deve estar em void setup()
-  logo após de Serial.begin() e Wire.begin() */
-void StartVLs() {
-  pinMode(XSHUT_center, OUTPUT);
-  pinMode(XSHUT_left, OUTPUT);
-  pinMode(XSHUT_right, OUTPUT);
-
-  pinMode(XSHUT_center, INPUT);
-  delay(10);
-  s_center.setAddress(address_center);
-  if (!s_center.begin(address_center)) {
-    Serial.println(F("Failed to boot VL53L0X central"));
-    while (1);
-  }
-
-  pinMode(XSHUT_left, INPUT);
-  delay(10);
-  s_left.setAddress(address_left);
-  if (!s_left.begin(address_left)) {
-    Serial.println(F("Failed to boot VL53L0X left"));
-    while (1);
-  }
-
-  pinMode(XSHUT_right, INPUT);
-  delay(10);
-  s_right.setAddress(address_right);
-  if (!s_right.begin(address_right)) {
-    Serial.println(F("Failed to boot VL53L0X right"));
-    while (1);
-  }
-}
-
-// Acredito que o intuito deve ser somente mudar entre standby ou locked já que não existe mais manual
 void StatusVerify(){
   if (PS4.Options()){
     if (!opcaoApertado){

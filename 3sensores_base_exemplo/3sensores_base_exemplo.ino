@@ -44,12 +44,12 @@ void setupVLs(){
   }
   delay(10);
   if(!s_left.begin()) {
-    Serial.println(F("Failed to boot center VL53L0X"));
+    Serial.println(F("Failed to boot left VL53L0X"));
     while(1);
   }
   delay(10);
   if(!s_right.begin()) {
-    Serial.println(F("Failed to boot center VL53L0X"));
+    Serial.println(F("Failed to boot right VL53L0X"));
     while(1);
   }
   delay(10);
