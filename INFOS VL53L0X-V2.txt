@@ -1,0 +1,78 @@
+|===== INFOS SENSOR VL53L0X V2 =====|
+|===========  OmegaBotz  ===========|
+
+> DataSheet: https://cdn.awsli.com.br/945/945993/arquivos/vl53l0x.pdf
+> Biblioteca: https://github.com/adafruit/Adafruit_VL53L0X.git
+
+--- ESPECIFICAÇÕES TÉCNICAS ---
+
+. Modelo: VL53L0X V2
+. Tensão de operação: 5V
+. Consumo de corrente: 2.7µA
+. Tensão: 3,3 a 5 v (Regulador integrado)
+. Distância de medida recomendada: 30 - 1000 mm
+. Distância de medição absoluta: 2m
+. Variação de precisão: ± 5% (alta velocidade), ± 3% (alta precisão)
+. Campo de visão: 25 °
+. Interface de Comunicação: I2C (programável)
+
+
+--- PINAGEM ---
+
+. VCC: 5V
+. GND: GND
+. SCL: Clock I2C
+. SDA: Dados I2C
+. GPIO1: Pino de interrupção quando uma medição é realizada
+. XSHUT: Pino para desligar sensor
+
+
+--- MODOS DE OPERAÇÃO ---
+
+> Single Ranging:
+  . A medição é feita uma única vez quando solicitada e após isto o sensor entra em modo standby;
+
+> Continous Ranging: 
+  . A medição é feita de forma contínua.
+
+> Timed Ranging:
+  . A medição é feita continuamente com atrasos programáveis entre as medições.
+
+
+--- PERFIS DE MEDIÇÃO ---
+
+> Default mode:
+  . Perfil padrão que apresenta um tempo de resposta de 30ms e permite medir até 120cm.
+
+> High speed:
+  . Perfil que apresenta um tempo de resposta de 20ms.
+
+> High accuracy:
+  . Perfil que apresenta um tempo de resposta de 200ms com uma acurácia de +-3%.
+
+> Long range:
+  . Perfil que permite medir até 200cm com uma acurácia de +-5%.
+
+O modo de longo alcance é recomendado apenas em ambientes sem interferência externa de luz infravermelha. Pois, se ele for utilizado em ambientes com interferência, a medição será um pouco instável e imprecisa (veremos isto mais a frente).
+
+E o perfil “Long range” pode ser combinado com o “High speed” ou o “High accuracy”. O mesmo vale para o perfil “Default mode”.
+
+
+--- ENDEREÇO ---
+
+Para utilizar mais de um sensor VL53L0X V2, é necessário alterar o endereço dos outros sensores, devido sua comunicação ser I2C.
+
+O endereço predefinido do sensor VL53L0X V2 é 0x29. Há duas maneiras de modifica-lo, ambas no firmware:
+
+> A primeira é durante a inicialização do sensor, em vez de chamar lox.begin() (que inicializaria o sensor com seu endereço padrão), chamar lox.begin(newAdress) onde newAdress é o endereço que desejar.
+
+> A segunda maneira, é chamar lox.setAddress(newAddress) a qualquer momento.
+
+Porém, para alterar o endereço dos sensores, é necessário utilizar o pino XSHUT. 
+
+O pino XSHUT possui um resistor de pull-up que o leva a estado lógico alto (HIGH) quando o VL53L0X é alimentado. O reset é ativado quando levado a nível lógico baixo (LOW), fazendo o sensor entrar em modo standby.
+
+Para configurar o endereço, basta desligar sequencialmente cada sensor usando o pino XSHUT e em seguida ligar os módulos para atribuir seus novos endereços. Porém, o pino XSHUT não deve ser ligado com 5V, então inicializando-o como OUTPUT no firmware, o pino entrará no estado de baixa impedância, ativando o standby.
+
+Mudando para INPUT, o pino entra em um estado de alta impedância, sendo “puxado” para uma tensão de 2.8V por seu resistor de pull-up, podendo na sequência definir o endereço com a função .begin ou setAddress.
+

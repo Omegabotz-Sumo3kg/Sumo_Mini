@@ -1,0 +1,8 @@
+Square = RADAR
+Circle = SUICIDIO
+Triangle = MOVIMENTACAO
+Cross = RADAR_INVERSO
+Square + Cross = DESVIAR
+Circle + Cross = DESVIAR_COM_SENSOR
+
+
